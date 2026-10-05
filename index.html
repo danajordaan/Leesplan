@@ -262,6 +262,7 @@ function home(){
           h('div',{class:'refs'}, day.ref),
           h('p',{class:'muted',style:'margin:10px 0 0'}, firstSentence(day.leer)),
           h('button',{class:'btn primary block',type:'button',style:'margin-top:14px',onclick:()=>openDay(cd)}, d.done[cd] ? 'Kyk weer' : 'Begin vandag se lees'))),
+      !S.herinnering ? h('button',{class:'card',type:'button',style:'display:block;width:100%;text-align:left;cursor:pointer',onclick:()=>go('ek')}, h('b',{},'Stel ’n daaglikse herinnering'), h('div',{class:'small muted'},'Jou foon herinner jou elke dag om te lees. Tik hier.')) : null,
       st === 0 && doneCount > 0 ? h('p',{class:'note'},'Het jy ’n dag gemis? Geen probleem nie. Gaan net aan waar jy gebly het.') : null,
       h('div',{class:'card'},
         h('h3',{style:'font-size:18px'},'Hoe werk dit?'),
@@ -407,6 +408,20 @@ function progress(){
     ));
 }
 
+function reminderCard(){
+  const sel = h('select',{id:'herinner-tyd',style:'border:1.5px solid var(--line);border-radius:10px;padding:10px;background:var(--bg);font-weight:700'});
+  for(let hh=5; hh<22; hh++) for(const mm of [0,30]){ const v = String(hh).padStart(2,'0')+String(mm).padStart(2,'0'); const o = h('option',{value:v}, `${hh}:${String(mm).padStart(2,'0')}`); if(v === (S.herinnering||'1900')) o.selected = true; sel.append(o); }
+  sel.addEventListener('change', ()=>{ S.herinnering = sel.value; save(); });
+  const go_ = () => { S.herinnering = sel.value; save();
+    const url = new URL('herinnering/'+sel.value+'.ics', location.href).href;
+    if(location.protocol === 'https:' && location.hostname.endsWith('github.io')) window.open(url, '_blank'); else toast('Dit werk net in die regte app op jou foon'); };
+  return h('section',{class:'card'}, h('h2',{style:'font-size:20px'},'Daaglikse herinnering'),
+    h('p',{class:'small muted',style:'margin:4px 0 0'},'Kies wanneer jy elke dag wil lees. Jou foon se kalender herinner jou dan elke dag op daardie tyd.'),
+    h('div',{class:'row',style:'margin-top:10px'}, h('label',{for:'herinner-tyd',style:'font-weight:800'},'Tyd'), sel,
+      h('button',{class:'btn primary',type:'button',onclick:go_},'Stel herinnering')),
+    h('p',{class:'note'},'Tik daarna op “Voeg by kalender” (Add to Calendar). Wil jy die tyd verander? Vee die ou “Bybeltyd” in jou kalender uit en stel ’n nuwe een.'));
+}
+
 function settings(){
   const p = me();
   const restoreBox = h('textarea',{id:'herstel',rows:3,placeholder:'Plak jou rugsteun-teks hier'});
@@ -442,6 +457,7 @@ function settings(){
         h('div',{class:'row',style:'margin-top:8px'},
           h('button',{class:'btn dark',type:'button',onclick:()=>doRestore(restoreBox.value)},'Sit terug van teks'),
           h('button',{class:'btn ghost',type:'button',onclick:()=>file.click()},'Kies lêer'), file)),
+      reminderCard(),
       h('section',{class:'card'}, h('h2',{style:'font-size:20px'},'Pappa en Mamma se WhatsApp'),
         h('p',{class:'small muted',style:'margin:4px 0 0'},'Sit hulle selnommers hier in. Dan stuur die “Stuur vir Pappa”- en “Stuur vir Mamma”-knoppies jou joernaal reguit na hulle op WhatsApp. Die nommers bly net op hierdie toestel.'),
         ['pappa','mamma'].map(w => { const inp = h('input',{type:'tel',id:'nr-'+w,inputmode:'tel',autocomplete:'off',placeholder:'Bv. 082 123 4567'}); inp.value = S.ouers?.[w]||'';
