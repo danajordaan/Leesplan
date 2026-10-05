@@ -262,7 +262,7 @@ function home(){
           h('div',{class:'refs'}, day.ref),
           h('p',{class:'muted',style:'margin:10px 0 0'}, firstSentence(day.leer)),
           h('button',{class:'btn primary block',type:'button',style:'margin-top:14px',onclick:()=>openDay(cd)}, d.done[cd] ? 'Kyk weer' : 'Begin vandag se lees'))),
-      !S.herinnering ? h('button',{class:'card',type:'button',style:'display:block;width:100%;text-align:left;cursor:pointer',onclick:()=>go('ek')}, h('b',{},'Stel ’n daaglikse herinnering'), h('div',{class:'small muted'},'Jou foon herinner jou elke dag om te lees. Tik hier.')) : null,
+      !S.herinnering ? h('button',{class:'card',type:'button',style:'display:block;width:100%;text-align:left;cursor:pointer',onclick:()=>{ go('ek'); setTimeout(()=>document.getElementById('herinnering')?.scrollIntoView({block:'start'}),50); }}, h('b',{},'Stel ’n daaglikse herinnering'), h('div',{class:'small muted'},'Jou toestel kan jou elke dag herinner om te lees. Tik hier.')) : null,
       st === 0 && doneCount > 0 ? h('p',{class:'note'},'Het jy ’n dag gemis? Geen probleem nie. Gaan net aan waar jy gebly het.') : null,
       h('div',{class:'card'},
         h('h3',{style:'font-size:18px'},'Hoe werk dit?'),
@@ -409,17 +409,25 @@ function progress(){
 }
 
 function reminderCard(){
-  const sel = h('select',{id:'herinner-tyd',style:'border:1.5px solid var(--line);border-radius:10px;padding:10px;background:var(--bg);font-weight:700'});
-  for(let hh=5; hh<22; hh++) for(const mm of [0,30]){ const v = String(hh).padStart(2,'0')+String(mm).padStart(2,'0'); const o = h('option',{value:v}, `${hh}:${String(mm).padStart(2,'0')}`); if(v === (S.herinnering||'1900')) o.selected = true; sel.append(o); }
-  sel.addEventListener('change', ()=>{ S.herinnering = sel.value; save(); });
-  const go_ = () => { S.herinnering = sel.value; save();
-    const url = new URL('herinnering/'+sel.value+'.ics', location.href).href;
-    if(location.protocol === 'https:' && location.hostname.endsWith('github.io')) window.open(url, '_blank'); else toast('Dit werk net in die regte app op jou foon'); };
-  return h('section',{class:'card'}, h('h2',{style:'font-size:20px'},'Daaglikse herinnering'),
-    h('p',{class:'small muted',style:'margin:4px 0 0'},'Kies wanneer jy elke dag wil lees. Jou foon se kalender herinner jou dan elke dag op daardie tyd.'),
-    h('div',{class:'row',style:'margin-top:10px'}, h('label',{for:'herinner-tyd',style:'font-weight:800'},'Tyd'), sel,
-      h('button',{class:'btn primary',type:'button',onclick:go_},'Stel herinnering')),
-    h('p',{class:'note'},'Tik daarna op “Voeg by kalender” (Add to Calendar). Wil jy die tyd verander? Vee die ou “Bybeltyd” in jou kalender uit en stel ’n nuwe een.'));
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+  const steps = isIOS ? [
+      'Maak die Herinneringe-app (Reminders) op jou toestel oop.',
+      'Tik op “Nuwe herinnering” (New Reminder) en tik: Bybeltyd – Jordaan familie Bybel.',
+      'Tik op die ⓘ-knoppie langs die herinnering.',
+      'Skakel “Datum” (Date) en “Tyd” (Time) aan en kies die tyd wanneer jy wil lees.',
+      'Tik op “Herhaal” (Repeat) en kies “Daagliks” (Daily).',
+      'Tik op “Klaar” (Done).']
+    : [
+      'Maak die Klok-app (Clock) op jou foon oop en kies “Alarm”.',
+      'Tik op + en kies die tyd wanneer jy wil lees.',
+      'Kies by “Herhaal” al sewe dae.',
+      'Gee die alarm die naam: Bybeltyd – Jordaan familie Bybel.',
+      'Stoor die alarm.'];
+  return h('section',{class:'card',id:'herinnering'}, h('h2',{style:'font-size:20px'},'Daaglikse herinnering'),
+    h('p',{class:'small muted',style:'margin:4px 0 0'},'Laat jou toestel jou elke dag herinner om te lees. Dit neem een minuut om op te stel.'),
+    h('ol',{style:'margin:10px 0 0;padding-left:20px'}, steps.map(x=>h('li',{},x))),
+    S.herinnering ? h('div',{class:'done-banner'},'✓','Jou herinnering is gestel')
+      : h('button',{class:'btn primary',type:'button',style:'margin-top:12px',onclick:()=>{ S.herinnering = today(); save(); render(); toast('Mooi so!'); }},'Ek het my herinnering gestel'));
 }
 
 function settings(){
