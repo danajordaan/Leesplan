@@ -262,7 +262,6 @@ function home(){
           h('div',{class:'refs'}, day.ref),
           h('p',{class:'muted',style:'margin:10px 0 0'}, firstSentence(day.leer)),
           h('button',{class:'btn primary block',type:'button',style:'margin-top:14px',onclick:()=>openDay(cd)}, d.done[cd] ? 'Kyk weer' : 'Begin vandag se lees'))),
-      !S.herinnering ? h('button',{class:'card',type:'button',style:'display:block;width:100%;text-align:left;cursor:pointer',onclick:()=>{ go('ek'); setTimeout(()=>document.getElementById('herinnering')?.scrollIntoView({block:'start'}),50); }}, h('b',{},'Stel ’n daaglikse herinnering'), h('div',{class:'small muted'},'Jou toestel kan jou elke dag herinner om te lees. Tik hier.')) : null,
       st === 0 && doneCount > 0 ? h('p',{class:'note'},'Het jy ’n dag gemis? Geen probleem nie. Gaan net aan waar jy gebly het.') : null,
       h('div',{class:'card'},
         h('h3',{style:'font-size:18px'},'Hoe werk dit?'),
@@ -408,28 +407,6 @@ function progress(){
     ));
 }
 
-function reminderCard(){
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
-  const steps = isIOS ? [
-      'Maak die Herinneringe-app (Reminders) op jou toestel oop.',
-      'Tik op “Nuwe herinnering” (New Reminder) en tik: Bybeltyd – Jordaan familie Bybel.',
-      'Tik op die ⓘ-knoppie langs die herinnering.',
-      'Skakel “Datum” (Date) en “Tyd” (Time) aan en kies die tyd wanneer jy wil lees.',
-      'Tik op “Herhaal” (Repeat) en kies “Daagliks” (Daily).',
-      'Tik op “Klaar” (Done).']
-    : [
-      'Maak die Klok-app (Clock) op jou foon oop en kies “Alarm”.',
-      'Tik op + en kies die tyd wanneer jy wil lees.',
-      'Kies by “Herhaal” al sewe dae.',
-      'Gee die alarm die naam: Bybeltyd – Jordaan familie Bybel.',
-      'Stoor die alarm.'];
-  return h('section',{class:'card',id:'herinnering'}, h('h2',{style:'font-size:20px'},'Daaglikse herinnering'),
-    h('p',{class:'small muted',style:'margin:4px 0 0'},'Laat jou toestel jou elke dag herinner om te lees. Dit neem een minuut om op te stel.'),
-    h('ol',{style:'margin:10px 0 0;padding-left:20px'}, steps.map(x=>h('li',{},x))),
-    S.herinnering ? h('div',{class:'done-banner'},'✓','Jou herinnering is gestel')
-      : h('button',{class:'btn primary',type:'button',style:'margin-top:12px',onclick:()=>{ S.herinnering = today(); save(); render(); toast('Mooi so!'); }},'Ek het my herinnering gestel'));
-}
-
 function settings(){
   const p = me();
   const restoreBox = h('textarea',{id:'herstel',rows:3,placeholder:'Plak jou rugsteun-teks hier'});
@@ -447,7 +424,6 @@ function settings(){
         h('div',{class:'row'}, h('div',{class:'avatar',style:`background:${p.color}`}, p.name[0].toUpperCase()), h('div',{style:'min-width:0;flex:1'}, h('b',{},p.name), h('div',{class:'small muted'}, p.groot ? 'Groter letters' : 'Gewone letters')),
           h('button',{class:'btn ghost',type:'button',onclick:()=>{ $('#app').replaceChildren(welcome(p)); $('#tabs').hidden=true; }},'Verander')),
         h('div',{class:'switch',style:'margin-top:10px'}, h('label',{for:'tema',style:'font-weight:800'},'Voorkoms'), themeSel)),
-      reminderCard(),
       h('section',{class:'card'}, h('h2',{style:'font-size:20px'},'Leesplanne'),
         h('div',{class:'list'}, PLANS.map(pl => h('button',{class:'item',type:'button',style:'text-align:left;cursor:pointer',onclick:()=>{ p.plan = pl.id; S.view=null; save(); toast('Plan gekies'); render(); }},
           h('div',{class:'t'}, h('b',{},pl.naam), h('p',{class:'small muted'}, pl.beskrywing)), pl.id===plan().id ? h('span',{class:'pill'},'Aktief') : null))),
