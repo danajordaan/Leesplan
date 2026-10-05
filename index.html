@@ -82,7 +82,7 @@ h1,h2,h3{font-family:var(--display);line-height:1.15;text-wrap:balance;margin:0}
 .q p{margin:6px 0 0;font-weight:700;font-size:1.08em}
 label.f{display:block;font-weight:800;margin-top:14px}
 label.f span{display:block;font-weight:600;color:var(--muted);font-size:14px}
-textarea,input[type=text]{width:100%;border:1.5px solid var(--line);background:var(--bg);border-radius:12px;padding:11px 12px;margin-top:6px;resize:vertical}
+textarea,input[type=text],input[type=tel]{width:100%;border:1.5px solid var(--line);background:var(--bg);border-radius:12px;padding:11px 12px;margin-top:6px;resize:vertical}
 textarea{min-height:84px}
 .done-banner{display:flex;gap:12px;align-items:center;background:var(--leaf-soft);border-radius:var(--r);padding:14px 16px;margin-top:12px;font-weight:800}
 .intro{background:var(--card);border-left:0;border-radius:var(--r);padding:16px;margin-top:16px;border:1px dashed var(--line)}
@@ -143,9 +143,12 @@ const ART = JSON.parse(document.getElementById('art').textContent);
 const KEY = 'leesplan.v1';
 const COLORS = ['#d9684e','#2f7f8a','#6b5bb5','#4f8a3c','#c4892a','#c2477d'];
 const BIBLE = (code, ch) => `https://www.biblesa.co.za/bible/AFR53/${code}.${ch}`;
+const STANDALONE = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+// SA numbers: 082 123 4567 -> 27821234567 (wa.me needs the international form, digits only)
+const waNum = n => { let d = String(n||'').replace(/\D/g,''); if(d.startsWith('00')) d = d.slice(2); if(d.startsWith('0')) d = '27'+d.slice(1); return d.length >= 10 ? d : ''; };
 
 /* ---------- state ---------- */
-function blank(){ return { v:1, profiles:[], active:null, tab:'vandag', view:null, theme:'auto' }; }
+function blank(){ return { v:1, profiles:[], active:null, tab:'vandag', view:null, theme:'auto', ouers:{pappa:'',mamma:''} }; }
 let S = load();
 function load(){ try{ const t = localStorage.getItem(KEY); if(t){ const s = JSON.parse(t); return Object.assign(blank(), s); } }catch(e){} return blank(); }
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
@@ -298,7 +301,7 @@ function dayView(dag){
         h('p',{class:'small muted',style:'margin:4px 0 0'},'Tik op ’n hoofstuk. Dit maak die 1933/53-vertaling oop, met die luister-knoppie bo-aan.'),
         h('div',{class:'chapters'}, day.hoofstukke.map(([book,code,ch]) => {
           const k = code+'.'+ch;
-          return h('a',{class:'chap'+(d.seen[k]?' seen':''),href:BIBLE(code,ch),target:'_blank',rel:'noopener',onclick:e=>{ d.seen[k]=today(); save(); e.currentTarget.classList.add('seen'); }}, `${book} ${ch}`, h('small',{}, d.seen[k] ? 'oopgemaak ✓' : 'Lees · Luister'));
+          return h('a',{class:'chap'+(d.seen[k]?' seen':''),href:BIBLE(code,ch),target:STANDALONE?null:'_blank',rel:'noopener',onclick:e=>{ d.seen[k]=today(); save(); e.currentTarget.classList.add('seen'); }}, `${book} ${ch}`, h('small',{}, d.seen[k] ? 'oopgemaak ✓' : 'Lees · Luister'));
         }))),
       h('h2',{style:'font-size:20px;margin-top:22px'},'2. Verstaan'),
       simple ? null : pillar('<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>','var(--lamp-soft)','Agtergrond', day.agtergrond),
@@ -313,7 +316,8 @@ function dayView(dag){
         field('vers','My vers vir vandag','Skryf die versnommer en waarom dit vir jou uitstaan.',2),
         field('vraagPa','’n Vraag wat ek het','Iets wat jy nie verstaan nie, of vir Pappa en Mamma wil vra.',2),
         h('div',{class:'row',style:'margin-top:12px'},
-          h('button',{class:'btn soft',type:'button',onclick:()=>shareEntry(day)},'Deel met Pappa en Mamma'),
+          h('button',{class:'btn soft',type:'button',onclick:()=>shareEntry(day,'pappa')},'Stuur vir Pappa'),
+          h('button',{class:'btn soft',type:'button',onclick:()=>shareEntry(day,'mamma')},'Stuur vir Mamma'),
           h('span',{class:'small muted'},'Jou joernaal word outomaties gestoor.'))),
       h('h2',{style:'font-size:20px;margin-top:22px'},'4. Bid'),
       pillar('<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.6-7 10-7 10z"/></svg>','var(--coral-soft)','Waaroor ons wil bid', day.bid, true),
@@ -338,12 +342,16 @@ function entryText(day, j){
   lines.push(`\n– ${me().name}`);
   return lines.join('\n');
 }
-async function shareEntry(day){
+async function shareEntry(day, who){
   const j = pdata().journal[day.dag] || {};
   if(!j.leer && !j.antwoord && !j.vers && !j.vraagPa){ toast('Skryf eers iets in jou joernaal'); return; }
   const text = entryText(day, j);
+  const num = waNum(S.ouers?.[who]);
+  if(num){ location.href = 'https://wa.me/'+num+'?text='+encodeURIComponent(text); return; }
+  // no number saved yet: let the phone ask who to send it to
+  toast(`Pappa en Mamma se nommers is nog nie by “Ek” ingesit nie`);
   if(navigator.share){ try{ await navigator.share({text}); return; }catch(e){ if(e.name==='AbortError') return; } }
-  window.open('https://wa.me/?text='+encodeURIComponent(text), '_blank', 'noopener');
+  location.href = 'https://wa.me/?text='+encodeURIComponent(text);
 }
 
 function journal(){
@@ -434,6 +442,11 @@ function settings(){
         h('div',{class:'row',style:'margin-top:8px'},
           h('button',{class:'btn dark',type:'button',onclick:()=>doRestore(restoreBox.value)},'Sit terug van teks'),
           h('button',{class:'btn ghost',type:'button',onclick:()=>file.click()},'Kies lêer'), file)),
+      h('section',{class:'card'}, h('h2',{style:'font-size:20px'},'Pappa en Mamma se WhatsApp'),
+        h('p',{class:'small muted',style:'margin:4px 0 0'},'Sit hulle selnommers hier in. Dan stuur die “Stuur vir Pappa”- en “Stuur vir Mamma”-knoppies jou joernaal reguit na hulle op WhatsApp. Die nommers bly net op hierdie toestel.'),
+        ['pappa','mamma'].map(w => { const inp = h('input',{type:'tel',id:'nr-'+w,inputmode:'tel',autocomplete:'off',placeholder:'Bv. 082 123 4567'}); inp.value = S.ouers?.[w]||'';
+          inp.addEventListener('change', ()=>{ S.ouers = S.ouers||{}; S.ouers[w] = inp.value.trim(); save(); toast(waNum(inp.value) ? 'Gestoor' : (inp.value.trim() ? 'Kyk weer na die nommer' : 'Verwyder')); });
+          return h('label',{class:'f',for:'nr-'+w}, w==='pappa'?'Pappa':'Mamma', inp); })),
       h('section',{class:'card'}, h('h2',{style:'font-size:20px'},'Profiele op hierdie toestel'),
         h('div',{class:'list'}, S.profiles.map(pp => h('button',{class:'item',type:'button',style:'text-align:left;cursor:pointer',onclick:()=>{ S.active = pp.id; S.view=null; save(); render(); }},
           h('div',{class:'avatar',style:`background:${pp.color}`}, pp.name[0].toUpperCase()), h('div',{class:'t'}, h('b',{},pp.name)), pp.id===p.id ? h('span',{class:'pill'},'Jy') : null))),
