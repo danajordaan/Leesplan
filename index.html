@@ -439,6 +439,7 @@ function settings(){
         h('div',{class:'row'}, h('div',{class:'avatar',style:`background:${p.color}`}, p.name[0].toUpperCase()), h('div',{style:'min-width:0;flex:1'}, h('b',{},p.name), h('div',{class:'small muted'}, p.groot ? 'Groter letters' : 'Gewone letters')),
           h('button',{class:'btn ghost',type:'button',onclick:()=>{ $('#app').replaceChildren(welcome(p)); $('#tabs').hidden=true; }},'Verander')),
         h('div',{class:'switch',style:'margin-top:10px'}, h('label',{for:'tema',style:'font-weight:800'},'Voorkoms'), themeSel)),
+      reminderCard(),
       h('section',{class:'card'}, h('h2',{style:'font-size:20px'},'Leesplanne'),
         h('div',{class:'list'}, PLANS.map(pl => h('button',{class:'item',type:'button',style:'text-align:left;cursor:pointer',onclick:()=>{ p.plan = pl.id; S.view=null; save(); toast('Plan gekies'); render(); }},
           h('div',{class:'t'}, h('b',{},pl.naam), h('p',{class:'small muted'}, pl.beskrywing)), pl.id===plan().id ? h('span',{class:'pill'},'Aktief') : null))),
@@ -457,7 +458,6 @@ function settings(){
         h('div',{class:'row',style:'margin-top:8px'},
           h('button',{class:'btn dark',type:'button',onclick:()=>doRestore(restoreBox.value)},'Sit terug van teks'),
           h('button',{class:'btn ghost',type:'button',onclick:()=>file.click()},'Kies lêer'), file)),
-      reminderCard(),
       h('section',{class:'card'}, h('h2',{style:'font-size:20px'},'Pappa en Mamma se WhatsApp'),
         h('p',{class:'small muted',style:'margin:4px 0 0'},'Sit hulle selnommers hier in. Dan stuur die “Stuur vir Pappa”- en “Stuur vir Mamma”-knoppies jou joernaal reguit na hulle op WhatsApp. Die nommers bly net op hierdie toestel.'),
         ['pappa','mamma'].map(w => { const inp = h('input',{type:'tel',id:'nr-'+w,inputmode:'tel',autocomplete:'off',placeholder:'Bv. 082 123 4567'}); inp.value = S.ouers?.[w]||'';
